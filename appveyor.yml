@@ -4,7 +4,7 @@
 os: Unstable
 version: 0.1.{build}.0
 install:
-  - cinst -y pester
+  - cinst -y pester -version '3.3.13'
   - ps: Get-PackageProvider -Name NuGet -Force
 environment:
   APIKEY:

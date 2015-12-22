@@ -8,16 +8,12 @@
     This script originated from work found here:  https://github.com/kmarquette/PesterInAction
 #>
 
-# TODO Maybe the top of the file should have a hashtable of commands and their parameters?
-
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $parent = Split-Path -parent $here
 $module = Split-Path -Leaf $parent
 
 Describe "Module: $module" -Tags Unit {
 #region Generic PS module tests
-    
-    # TODO This section should use Module in the same way as the others
     Context "Module Configuration" {
         
         It "Has a root module file ($module.psm1)" {        
@@ -50,10 +46,13 @@ Describe "Module: $module" -Tags Unit {
             $null = [System.Management.Automation.PSParser]::Tokenize($contents, [ref]$errors)
             $errors.Count | Should Be 0
         }
+        
+        It 'Contains the ADAL dll' {
+            "$parent\Assemblies\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" | Should Exist
+        }
     }
-
-    
-
+#endregion 
+#region module content
     Context 'Module loads and Functions exist' {
         
         $manifest = Test-ModuleManifest -Path "$parent\$module.psd1"
@@ -83,7 +82,8 @@ Describe "Module: $module" -Tags Unit {
             $loadedFunctions = $null
         }
     }
-
+#endregion
+#region functions
     Context 'Help provided for Functions' {
         
         Foreach ($Function in $loadedFunctions) {

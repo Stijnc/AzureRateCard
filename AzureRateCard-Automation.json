@@ -37,6 +37,6 @@
       "TypeName": "System.String"
     }
   ],
-  "ConnectionTypeName": "PowerBI",
-  "IntegrationModuleName":  "PowerBIPS"
+  "ConnectionTypeName": "AzureRateCard",
+  "IntegrationModuleName":  "AzureRateCard"
 }

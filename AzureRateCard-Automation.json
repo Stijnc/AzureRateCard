@@ -1,0 +1,42 @@
+{
+  "ConnectionFields": [
+    {
+      "IsEncrypted": false,
+      "IsOptional": false,
+      "Name": "UserName",
+      "TypeName": "System.String"
+    },
+    {
+      "IsEncrypted": true,
+      "IsOptional": false,
+      "Name": "Password",
+      "TypeName": "System.String"
+    },
+     {
+      "IsEncrypted": false,
+      "IsOptional": false,
+      "Name": "Offer",
+      "TypeName": "System.String"
+    },
+     {
+      "IsEncrypted": false,
+      "IsOptional": false,
+      "Name": "Currency",
+      "TypeName": "System.String"
+    },
+     {
+      "IsEncrypted": false,
+      "IsOptional": false,
+      "Name": "Locale",
+      "TypeName": "System.String"
+    },
+     {
+      "IsEncrypted": false,
+      "IsOptional": false,
+      "Name": "RegionInfo",
+      "TypeName": "System.String"
+    }
+  ],
+  "ConnectionTypeName": "PowerBI",
+  "IntegrationModuleName":  "PowerBIPS"
+}

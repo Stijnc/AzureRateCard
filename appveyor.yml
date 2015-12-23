@@ -6,7 +6,7 @@ version: 0.1.{build}.0
 skip_commits:
     message: /Created.*\.(png|jpg|jpeg|bmp|png|gif)
     message: /updated readme.*
-    
+    message: /updated appveyor.*
 install:
   - cinst -y pester -version '3.3.13'
   - ps: Get-PackageProvider -Name NuGet -Force

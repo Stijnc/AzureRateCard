@@ -206,7 +206,7 @@ function Get-AzureRateCard {
     $data
 }   
 
-Function Get-AzureRequestHeader {
+Function GetAzureRequestHeader {
 <#
             .SYNOPSIS
                 Creates a request header based on the token provided
@@ -224,10 +224,10 @@ Function Get-AzureRequestHeader {
     param(
         [string]$authToken
     )
-	$headers = @{
-		'Content-Type'='application/json'
-		'Authorization'= "Bearer $authToken"
-		}
-	
-	$headers
+    $headers = @{
+        'Content-Type'='application/json'
+        'Authorization'= "Bearer $authToken"
+        }
+    
+    $headers
 }

@@ -5,220 +5,29 @@
 .EXAMPLE
     Invoke-Pester 
 .NOTES
-    This script originated from work found here:  https://github.com/kmarquette/PesterInAction
-    scriptanalyzer section basics taken from DSCResource.Tests
+    This file contains only module specific test.
+    For general tests, refer to https://github.com/Stijnc/PowerShellModule.Tests
 #>
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $parent = Split-Path -parent $here
 $module = Split-Path -Leaf $parent
 
-$ErrorActionPreference = 'stop'
-Set-StrictMode -Version latest
-
-$psVersion = $PSVersionTable.PSVersion
-
-#region PSScriptanalyzer
-if ($psVersion.Major -ge 5)
-{
-    Write-Verbose -Verbose "Installing PSScriptAnalyzer"
-    $PSScriptAnalyzerModuleName = "PSScriptAnalyzer"
-    Install-Module -Name $PSScriptAnalyzerModuleName -Scope CurrentUser -Force 
-    $PSScriptAnalyzerModule = get-module -Name $PSScriptAnalyzerModuleName -ListAvailable
-    if ($PSScriptAnalyzerModule) {
-        # Import the module if it is available
-        $PSScriptAnalyzerModule | Import-Module -Force
-    }
-    else
-    {
-        # Module could not/would not be installed - so warn user that tests will fail.
-        Write-Warning -Message ( @(
-            "The 'PSScriptAnalyzer' module is not installed. "
-            "The 'PowerShell modules scriptanalyzer' Pester test will fail "
-            ) -Join '' )
-    }
+#region HEADER
+if ( -not (Test-Path -Path '.\PowerShellModule.Tests\')) {
+    & git @('clone','https://github.com/Stijnc/PowerShellModule.Tests.git')
 }
-else
-{
-    Write-Verbose -Verbose "Skipping installation of PSScriptAnalyzer since it requires PSVersion 5.0 or greater. Used PSVersion: $($PSVersion)"
+else {
+    & git @('-C',(Join-Path -Path (Get-Location) -ChildPath '\PowerShellModule.Tests\'),'pull')
 }
 
 #endregion
 
-Describe 'Text files formatting' {
-    function Get-TextFilesList {
-        [CmdletBinding()]
-        [OutputType([System.IO.FileInfo])]
-        param(
-            [Parameter(Mandatory=$true)]
-            [string]$root
-        )
-        ls -File -Recurse $root | ? { @('.gitignore', '.gitattributes', '.ps1', '.psm1', '.psd1', '.json', '.xml', '.cmd', '.mof') -contains $_.Extension } 
-    }
-    function Test-FileUnicode {
-        
-        [CmdletBinding()]
-        [OutputType([bool])]
-        param(
-            [Parameter(ValueFromPipeline=$true, Mandatory=$true)]
-            [System.IO.FileInfo]$fileInfo
-        )
-        process {
-            $path = $fileInfo.FullName
-            $bytes = [System.IO.File]::ReadAllBytes($path)
-            $zeroBytes = @($bytes -eq 0)
-            return [bool]$zeroBytes.Length
-        }
-    }
-        
-    $allTextFiles = Get-TextFilesList $parent
-
-    Context 'Files encoding' {
-
-        It "Doesn't use Unicode encoding" {
-            $unicodeFilesCount = 0
-            $allTextFiles | %{
-                if (Test-FileUnicode $_) {
-                    $unicodeFilesCount += 1
-                    Write-Warning "File $($_.FullName) contains 0x00 bytes. It's probably uses Unicode and need to be converted to UTF-8. Use Fixer 'Get-UnicodeFilesList `$pwd | ConvertTo-UTF8'."
-                }
-            }
-            $unicodeFilesCount | Should Be 0
-        }
-    }
-
-    Context 'Indentations' {
-
-        It 'Uses spaces for indentation, not tabs' {
-            $totalTabsCount = 0
-            $allTextFiles | %{
-                $fileName = $_.FullName
-                Get-Content $_.FullName -Raw | Select-String "`t" | % {
-                    Write-Warning "There are tab in $fileName. Use Fixer 'Get-TextFilesList `$pwd | ConvertTo-SpaceIndentation'."
-                    $totalTabsCount++
-                }
-            }
-            $totalTabsCount | Should Be 0
-        }
-    }
-}
-
-
-Describe "Module: $module" -Tags Unit {
-#region ScriptAnalyzer
-    Context 'PSScriptAnalyzer' {
-        It "passes Invoke-ScriptAnalyzer" {
-
-            # Perform PSScriptAnalyzer scan.
-            # Using ErrorAction SilentlyContinue not to cause it to fail due to parse errors caused by unresolved resources.
-            # Many of our examples try to import different modules which may not be present on the machine and PSScriptAnalyzer throws parse exceptions even though examples are valid.
-            # Errors will still be returned as expected.
-            $PSScriptAnalyzerErrors = Invoke-ScriptAnalyzer -path $parent -Severity Error -Recurse -ErrorAction SilentlyContinue
-            if ($PSScriptAnalyzerErrors -ne $null) {
-                Write-Error "There are PSScriptAnalyzer errors that need to be fixed:`n $PSScriptAnalyzerErrors"
-                Write-Error "For instructions on how to run PSScriptAnalyzer on your own machine, please go to https://github.com/powershell/psscriptAnalyzer/"
-                $PSScriptAnalyzerErrors.Count | Should Be $null
-            }
-        }     
-    }
-#endregion
-#region Generic PS module tests
-    Context "Module Configuration" {
-        
-        It "Has a root module file ($module.psm1)" {        
-            
-            "$parent\$module.psm1" | Should Exist
-        }
-
-        It "Is valid Powershell (Has no script errors)" {
-
-            $contents = Get-Content -Path "$parent\$module.psm1" -ErrorAction SilentlyContinue
-            $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize($contents, [ref]$errors)
-            $errors.Count | Should Be 0
-        }
-
-        It "Has a manifest file ($module.psd1)" {
-            
-            "$parent\$module.psd1" | Should Exist
-        }
-
-        It "Contains a root module path in the manifest (RootModule = '.\$module.psm1')" {
-            
-            "$parent\$module.psd1" | Should Exist
-            "$parent\$module.psd1" | Should Contain "\.\\$module.psm1"
-        }
-
-        It "Is valid Powershell (Has no script errors)" {
-            $contents = Get-Content -Path "$parent\$module.psm1" -ErrorAction Stop
-            $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize($contents, [ref]$errors)
-            $errors.Count | Should Be 0
-        }
-        
-        It 'Contains the ADAL dll' {
-            "$parent\Assemblies\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" | Should Exist
-        }
-    }
-#endregion 
-#region module content
-    Context 'Module loads and Functions exist' {
-        
-        $manifest = Test-ModuleManifest -Path "$parent\$module.psd1"
-        $ExportedCommands = $manifest.ExportedCommands
-        $ModuleName = $manifest.Name
-        
-        It 'Module should load without error' {
-            $loadedModule.Name | Should Be $ModuleName
-        }
-
-        It 'Exported commands should include all functions' {
-            $loadedFunctions | Should Be $ExportedCommands.Keys
-        }
-        
-        BeforeEach {
-            if (get-module $Module) {remove-module $Module}
-            import-Module "$parent\$module.psd1" -ErrorAction SilentlyContinue
-            $loadedModule = Get-Module $module -ErrorAction SilentlyContinue    
-            $loadedFunctions = $loadedModule.ExportedCommands.Keys
-            
-        }
-        AfterEach {
-            
-            remove-module $module
-            $loadedModule = $null
-            $loadedFunctions = $null
-        }
-    }
-#endregion
-#region functions
-    Context 'Help provided for Functions' {
-        
-        Foreach ($Function in $loadedFunctions) {
-
-            $Help = Get-Help $Function
-
-            It "$Function should have a non-default Synopsis section in help" {                
-                $Help.Synopsis | Should Not Match "\r\n$Function*"
-                }
-
-            It "$Function should have help examples" {
-                $Help.Examples.Example.Count | Should Not Be 0
-                }
-        }
-        
-        BeforeAll {
-            if (get-module $Module) {remove-module $Module}
-            import-Module "$parent\$module.psd1" -ErrorAction SilentlyContinue
-            $loadedModule = Get-Module $module -ErrorAction SilentlyContinue    
-            $loadedFunctions = $loadedModule.ExportedCommands.keys
-        }
-        AfterAll {
-            
-            remove-module $module
-            $loadedFunctions = $null
-            $loadedModule = $null
-        }
+#region Specific Module tests
+Describe "$module Module Integration" {
+  
+    It 'Contains the ADAL dll' {
+        "$parent\Assemblies\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" | Should Exist
     }
 }
 #endregion

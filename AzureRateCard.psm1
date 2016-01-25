@@ -116,6 +116,8 @@ function Get-AzureRateCard {
             .PARAMETER apiVersion
                 The api verison to query
                 Defaults to 2015-06-01-preview
+            .EXAMPLE
+                Get-AzureRateCard -Offer 'Pay-As-You-Go' -Credential $credential 
 #>    
     [cmdletBinding(DefaultParameterSetName='Token')]
     Param(

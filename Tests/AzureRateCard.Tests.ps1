@@ -15,10 +15,10 @@ $module = Split-Path -Leaf $parent
 
 #region HEADER
 if ( -not (Test-Path -Path '.\PowerShellModule.Tests\')) {
-    & git @('clone','https://github.com/Stijnc/PowerShellModule.Tests.git')
+    & git @('clone','https://github.com/Stijnc/PowerShell.Module.Tests.git')
 }
 else {
-    & git @('-C',(Join-Path -Path (Get-Location) -ChildPath '\PowerShellModule.Tests\'),'pull')
+    & git @('-C',(Join-Path -Path (Get-Location) -ChildPath '\PowerShell.Module.Tests\'),'pull')
 }
 
 #endregion
